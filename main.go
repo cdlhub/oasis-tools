@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"flag"
 	"fmt"
@@ -46,11 +45,8 @@ func init() {
 	flag.Parse()
 }
 
-func writeBin(f *os.File, i int) error {
-	var buf bytes.Buffer
-	binary.Write(&buf, binary.BigEndian, i)
-	_, err := f.Write(buf.Bytes())
-	return err
+func writeBin(f *os.File, i int32) error {
+	return binary.Write(f, binary.LittleEndian, i)
 }
 
 func logCannotWrite(fileName string, line int, err error) {
@@ -72,12 +68,12 @@ func main() {
 	// S: step
 	// N: max return period
 	// R = 1/2 * ((sqrt(4*N+S) / sqrt(S)) - 1)
-	n := options.max
-	s := options.step + 1
+	n := int32(options.max)
+	s := int32(options.step + 1)
 	r1 := float64(4*n + s)
 	r2 := float64(s)
-	j := int(.5*(math.Sqrt(r1)/math.Sqrt(r2)-1) + .5)
-	middleRP := options.max / j
+	j := int32(.5*(math.Sqrt(r1)/math.Sqrt(r2)-1) + .5)
+	middleRP := n / j
 
 	f, err := os.Create(rpFileName)
 	if err != nil {
@@ -86,8 +82,8 @@ func main() {
 	defer f.Close()
 
 	line := 1
-	var rp int
-	for rp := options.min; rp < middleRP; rp += options.step {
+	var rp int32
+	for rp = int32(options.min); rp < middleRP; rp += s {
 		err := writeBin(f, rp)
 		if err != nil {
 			logCannotWrite(rpFileName, line, err)
@@ -95,8 +91,8 @@ func main() {
 		line++
 	}
 
-	for i := j; rp < options.max; i-- {
-		rp = options.max / i
+	for i := j; rp < n; i-- {
+		rp = n / i
 		err := writeBin(f, rp)
 		if err != nil {
 			logCannotWrite(rpFileName, line, err)
