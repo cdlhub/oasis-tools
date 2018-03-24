@@ -53,6 +53,10 @@ func writeBin(f *os.File, i int) error {
 	return err
 }
 
+func logCannotWrite(fileName string, line int, err error) {
+	log.Fatalf("ERROR: cannot write line %d to file %q: %v", line, fileName, err)
+}
+
 func main() {
 	log.SetFlags(0) // No time
 	log.Printf("Start %s", NAME)
@@ -77,25 +81,28 @@ func main() {
 
 	f, err := os.Create(rpFileName)
 	if err != nil {
-		log.Fatalf("ERROR: cannot open %q: %v", rpFileName, err)
+		log.Fatalf("ERROR: cannot create %q: %v", rpFileName, err)
 	}
 	defer f.Close()
 
+	line := 1
 	var rp int
-	for rp = options.min; rp < middleRP; rp += options.step {
+	for rp := options.min; rp < middleRP; rp += options.step {
 		err := writeBin(f, rp)
 		if err != nil {
-			log.Fatalf("ERROR: cannot write to file 'returnperiods.bin': %v", err)
+			logCannotWrite(rpFileName, line, err)
 		}
+		line++
 	}
 
 	for i := j; rp < options.max; i-- {
 		rp = options.max / i
 		err := writeBin(f, rp)
 		if err != nil {
-			log.Fatalf("ERROR: cannot write to file 'returnperiods.bin': %v", err)
+			logCannotWrite(rpFileName, line, err)
 		}
+		line++
 	}
 
-	log.Println("Done %s", NAME)
+	log.Printf("Done %s\n", NAME)
 }
