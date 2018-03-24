@@ -18,6 +18,8 @@ const (
 	NAME string = "returnperiod"
 )
 
+const rpFileName = "returnperiods.bin"
+
 // Options is for command line options
 type Options struct {
 	min  int
@@ -52,6 +54,16 @@ func writeBin(f *os.File, i int) error {
 }
 
 func main() {
+	log.SetFlags(0) // No time
+	log.Printf("Start %s", NAME)
+	log.Println()
+	log.Println(" Options:")
+	log.Printf("  - min return period: %d\n", options.min)
+	log.Printf("  - max return period: %d\n", options.max)
+	log.Printf("  - minumum step:      %d\n", options.step)
+	log.Println()
+	log.Printf(" > write %q", rpFileName)
+
 	// R: min return period before step by step
 	// S: step
 	// N: max return period
@@ -63,15 +75,9 @@ func main() {
 	j := int(.5*(math.Sqrt(r1)/math.Sqrt(r2)-1) + .5)
 	middleRP := options.max / j
 
-	log.SetFlags(0) // No time
-	log.Println("Options:")
-	log.Printf(" - min return period: %d\n", options.min)
-	log.Printf(" - max return period: %d\n", options.max)
-	log.Printf(" - minumum step:      %d\n", options.step)
-
-	f, err := os.Create("returnperiods.bin")
+	f, err := os.Create(rpFileName)
 	if err != nil {
-		log.Fatalf("ERROR: cannot write to 'returnperiods.bin': %v", err)
+		log.Fatalf("ERROR: cannot open %q: %v", rpFileName, err)
 	}
 	defer f.Close()
 
@@ -90,4 +96,6 @@ func main() {
 			log.Fatalf("ERROR: cannot write to file 'returnperiods.bin': %v", err)
 		}
 	}
+
+	log.Println("Done %s", NAME)
 }
