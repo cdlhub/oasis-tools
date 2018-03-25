@@ -53,8 +53,7 @@ func logCannotWrite(fileName string, line int, err error) {
 	log.Fatalf("ERROR: cannot write line %d to file %q: %v", line, fileName, err)
 }
 
-func main() {
-	log.SetFlags(0) // No time
+func logStart() {
 	log.Printf("Start %s", NAME)
 	log.Println()
 	log.Println(" Options:")
@@ -62,18 +61,12 @@ func main() {
 	log.Printf("  - max return period: %d\n", options.max)
 	log.Printf("  - minumum step:      %d\n", options.step)
 	log.Println()
-	log.Printf(" > write %q", rpFileName)
+	log.Printf(" Write %q\n", rpFileName)
+}
 
-	// R: min return period before step by step
-	// S: step
-	// N: max return period
-	// R = 1/2 * ((sqrt(4*N+S) / sqrt(S)) - 1)
-	n := int32(options.max)
-	s := int32(options.step + 1)
-	r1 := float64(4*n + s)
-	r2 := float64(s)
-	j := int32(.5*(math.Sqrt(r1)/math.Sqrt(r2)-1) + .5)
-	middleRP := n / j
+func main() {
+	log.SetFlags(0) // No time
+	logStart()
 
 	f, err := os.Create(rpFileName)
 	if err != nil {
@@ -81,9 +74,22 @@ func main() {
 	}
 	defer f.Close()
 
+	// m: min return period before step by step
+	// s: step
+	// n: max return period
+	//     1   sqrt(4n+s)
+	// m = - * ---------- - 1
+	//     2    sqrt(s)
+	n := int32(options.max)
+	s := int32(options.step + 1)
+	r1 := float64(4*n + s)
+	r2 := float64(s)
+	j := int32(.5*(math.Sqrt(r1)/math.Sqrt(r2)-1) + .5) // + .5 for int coinversion
+	m := n / j
+
 	line := 1
 	var rp int32
-	for rp = int32(options.min); rp < middleRP; rp += s {
+	for rp = int32(options.min); rp < m; rp += s {
 		err := writeBin(f, rp)
 		if err != nil {
 			logCannotWrite(rpFileName, line, err)
