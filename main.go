@@ -54,14 +54,10 @@ func logCannotWrite(fileName string, line int, err error) {
 }
 
 func logStart() {
-	log.Printf("Start %s", NAME)
-	log.Println()
-	log.Println(" Options:")
-	log.Printf("  - min return period: %d\n", options.min)
-	log.Printf("  - max return period: %d\n", options.max)
-	log.Printf("  - minumum step:      %d\n", options.step)
-	log.Println()
-	log.Printf(" Write %q\n", rpFileName)
+	log.Println("Options:")
+	log.Printf(" - min return period: %d\n", options.min)
+	log.Printf(" - max return period: %d\n", options.max)
+	log.Printf(" - minumum step:      %d\n", options.step)
 }
 
 func main() {
@@ -77,19 +73,25 @@ func main() {
 	// m: min return period before step by step
 	// s: step
 	// n: max return period
-	//     1   sqrt(4n+s)
-	// m = - * ---------- - 1
-	//     2    sqrt(s)
+	//     1   sqrt(4n + (s+1))
+	// m = - * ---------------- - 1
+	//     2      sqrt(s + 1)
 	n := int32(options.max)
-	s := int32(options.step + 1)
+	s := int32(options.step)
 	r1 := float64(4*n + s)
 	r2 := float64(s)
-	j := int32(.5*(math.Sqrt(r1)/math.Sqrt(r2)-1) + .5) // + .5 for int coinversion
+	j := int32(.5 * (math.Sqrt(r1)/math.Sqrt(r2) - 1)) // + .5 for int coinversion
 	m := n / j
 
+	log.Printf("Write %q\n", rpFileName)
+	log.Printf(" - cut index:         %d\n", j)
+	log.Printf(" - cut return period: %d\n", m)
+
+	fmt.Println("return_period")
 	line := 1
 	var rp int32
 	for rp = int32(options.min); rp < m; rp += s {
+		fmt.Println(rp)
 		err := writeBin(f, rp)
 		if err != nil {
 			logCannotWrite(rpFileName, line, err)
@@ -98,13 +100,16 @@ func main() {
 	}
 
 	for i := j; rp < n; i-- {
+		last := rp
 		rp = n / i
+		if rp < last+s/2 {
+			continue
+		}
+		fmt.Println(rp)
 		err := writeBin(f, rp)
 		if err != nil {
 			logCannotWrite(rpFileName, line, err)
 		}
 		line++
 	}
-
-	log.Printf("Done %s\n", NAME)
 }
