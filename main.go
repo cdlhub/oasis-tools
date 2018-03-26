@@ -60,6 +60,19 @@ func logStart() {
 	log.Printf(" - minumum step:      %d\n", options.step)
 }
 
+// Sample:
+// - min return period: 5
+// - max return period: 100
+// - minumum step:      5
+//
+// return_period
+// 5
+// 10
+// 15
+// 20
+// 33
+// 50
+// 100
 func main() {
 	log.SetFlags(0) // No time
 	logStart()
