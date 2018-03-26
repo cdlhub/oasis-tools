@@ -21,9 +21,10 @@ const rpFileName = "returnperiods.bin"
 
 // Options is for command line options
 type Options struct {
-	min  int
-	step int
-	max  int
+	min     int
+	step    int
+	max     int
+	verbose bool
 }
 
 var options Options
@@ -33,7 +34,7 @@ func init() {
 		fmt.Fprintln(os.Stderr, "Usage:")
 		fmt.Fprintf(os.Stderr, "\t%s -version\n", NAME)
 		fmt.Fprintf(os.Stderr, "\t%s -help\n", NAME)
-		fmt.Fprintf(os.Stderr, "\t%s -rp <N>\n", NAME)
+		fmt.Fprintf(os.Stderr, "\t%s [ -min M ] [ -step S ] [ -manx N ] [ -verbose ]\n", NAME)
 		fmt.Fprintln(os.Stderr)
 
 		flag.PrintDefaults()
@@ -42,6 +43,7 @@ func init() {
 	flag.IntVar(&options.min, "min", 5, "The minimum return period")
 	flag.IntVar(&options.step, "step", 5, "The minimum difference between two return periods")
 	flag.IntVar(&options.max, "max", 10000, "The maximum return period")
+	flag.BoolVar(&options.verbose, "verbose", false, "Vebose mode to output csv period file on standard output")
 	flag.Parse()
 }
 
@@ -96,15 +98,16 @@ func main() {
 	j := int32(.5 * (math.Sqrt(r1)/math.Sqrt(r2) - 1)) // + .5 for int coinversion
 	m := n / j
 
-	log.Printf("Write %q\n", rpFileName)
-	log.Printf(" - cut index:         %d\n", j)
-	log.Printf(" - cut return period: %d\n", m)
+	if options.verbose {
+		fmt.Println("return_period")
+	}
 
-	fmt.Println("return_period")
 	line := 1
 	var rp int32
 	for rp = int32(options.min); rp < m; rp += s {
-		fmt.Println(rp)
+		if options.verbose {
+			fmt.Println(rp)
+		}
 		err := writeBin(f, rp)
 		if err != nil {
 			logCannotWrite(rpFileName, line, err)
@@ -118,11 +121,20 @@ func main() {
 		if rp < last+s/2 {
 			continue
 		}
-		fmt.Println(rp)
+		if options.verbose {
+			fmt.Println(rp)
+		}
 		err := writeBin(f, rp)
 		if err != nil {
 			logCannotWrite(rpFileName, line, err)
 		}
 		line++
 	}
+
+	log.Printf("Write %q\n", rpFileName)
+	log.Println(" - linear part:")
+	log.Printf("    start:  %12d\n", options.min)
+	log.Printf("    end:    %12d\n", m)
+	log.Printf("    points: %12d\n", j)
+	log.Printf(" - total number of points: %d", line-1)
 }
