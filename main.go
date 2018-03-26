@@ -103,8 +103,10 @@ func main() {
 	}
 
 	line := 1
+
 	var rp int32
-	for rp = int32(options.min); rp < m; rp += s {
+	for i := int32(1); i <= j; i++ {
+		rp = n / i
 		if options.verbose {
 			fmt.Println(rp)
 		}
@@ -115,12 +117,7 @@ func main() {
 		line++
 	}
 
-	for i := j; rp < n; i-- {
-		last := rp
-		rp = n / i
-		if rp < last+s/2 {
-			continue
-		}
+	for rp = rp - s - ((rp - s) % s); rp >= int32(options.min); rp -= s {
 		if options.verbose {
 			fmt.Println(rp)
 		}
